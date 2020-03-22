@@ -6,6 +6,7 @@ from spaceShip import SpaceShip
 from bullet import Bullet
 from alien import Alien
 from gameStats import GameStats
+from button import Button
 
 class alienInvasionSideways():
     def __init__(self):
@@ -19,6 +20,7 @@ class alienInvasionSideways():
         self.aliens = pygame.sprite.Group()
         self._createFleet()
         self.bg = pygame.image.load("images/bg.bmp")
+        self.playButton = Button(self,"Play")
 
     def runGame(self):
         while True:
@@ -29,6 +31,9 @@ class alienInvasionSideways():
                     self.handleKeyDownEvents(event)
                 if event.type == pygame.KEYUP:
                     self.handleKeyUpEvents(event)
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    mousePos = pygame.mouse.get_pos()
+                    self._checkPlayButton(mousePos)
             #self.screen.fill(self.settings.backgroundColor)
             self.screen.blit(self.bg, (0, 0))
 
@@ -38,7 +43,8 @@ class alienInvasionSideways():
                 self._updateAliens()
                 self._updateBullets()
                 self._checkFleetEdges()
-
+            if not self.stats.gameActive:
+                self.playButton.drawButton()
             pygame.display.flip()
 
     
@@ -58,7 +64,10 @@ class alienInvasionSideways():
             self._createBullet()
         if event.key == pygame.K_0:
             self.stats.gameActive = not self.stats.gameActive
-
+    def _checkPlayButton(self,mousePos):
+        """ start a new game when the player clicks Play """
+        if self.playButton.rect.collidepoint(mousePos):
+            self.stats.gameActive = True
     def _createBullet(self):
         if len(self.bullets) < self.settings.allowedBulletAmount:
             newBullet = Bullet(self)
