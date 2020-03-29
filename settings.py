@@ -18,3 +18,10 @@ class Settings:
         self.alienDropSpeed = -40
 
         self.shipLimit = 3
+
+        self.practiceTargetSpeed = 1
+        self.practiceTargetHeight = 60
+        self.practiceTargetWidth = 60
+        self.practiceTargetColor = (100,100,100)
+        #-1 down , 1 up
+        self.practiceTargetDirection = -1
