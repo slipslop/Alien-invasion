@@ -16,6 +16,7 @@ class Settings:
         #1 = up, -1 = down
         self.alienMovementDirection = 1
         self.alienDropSpeed = -40
+        self.alienPoints = 50
 
         self.shipLimit = 3
 
@@ -25,3 +26,24 @@ class Settings:
         self.practiceTargetColor = (100,100,100)
         #-1 down , 1 up
         self.practiceTargetDirection = -1
+        self.bulletsAvailable = 3
+    
+    def resetSettings(self):
+        #resets all vital settings back. You need to maintain these...
+        self.shipSpeed = 4
+        self.bulletSpeed = 6
+        self.allowedBulletAmount = 3
+        self.alienSpeedX = 0.4
+        #1 = up, -1 = down
+        self.alienMovementDirection = 1
+        self.alienDropSpeed = -40
+        self.shipLimit = 3
+        self.practiceTargetSpeed = 1
+        #-1 down , 1 up
+        self.practiceTargetDirection = -1
+        self.bulletsAvailable = 3
+    
+    def makePracticeTargetHarder(self):
+        self.practiceTargetSpeed += 0.5
+        self.practiceTargetHeight * 0.9
+        self.practiceTargetWidth * 0.9

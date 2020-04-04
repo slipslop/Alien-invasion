@@ -8,6 +8,7 @@ from alien import Alien
 from gameStats import GameStats
 from button import Button
 from targetPractice import TargetPractice
+from scoreboard import Scoreboard
 
 class alienInvasionSideways():
     def __init__(self):
@@ -16,10 +17,11 @@ class alienInvasionSideways():
         self.screen = pygame.display.set_mode((self.settings.screenWidth,self.settings.screenHeight))
         pygame.display.set_caption("Alien invasion... Sideways")
         self.stats = GameStats(self)
+        self.sb = Scoreboard(self)
         self.ship = SpaceShip(self)
         self.bullets = pygame.sprite.Group()
         self.aliens = pygame.sprite.Group()
-        self._createFleet()
+       # self._createFleet()
         self.bg = pygame.image.load("images/bg.bmp")
         self.playButton = Button(self,"Play",50,50)
         self.practiceButton = Button(self,"Practice",100,100)
@@ -42,18 +44,30 @@ class alienInvasionSideways():
 
             if self.stats.gameActive:
                 self.ship.blitme()
-                self.ship.moveShip(self)
+                self.ship.moveShip(self) 
                 self._updateAliens()
                 self._updateBullets()
                 self._checkFleetEdges()
+                self.sb.showScore()
+                if len(self.aliens) == 0:
+                    # create a new fleet and center ship
+                    self._createFleet()
+                    #self._resetToNormal()
+                    self.settings.alienSpeedX *= 1.1
+                    self.settings.alienDropSpeed *= 1.05
+
             if not self.stats.gameActive and not self.stats.practiceActive:
                 self.playButton.drawButton()
                 self.practiceButton.drawButton()
+                pygame.mouse.set_visible(True)
             if self.stats.practiceActive:
                 self.ship.blitme()
                 self.ship.moveShip(self)
                 self._updateBullets()
                 self._updatePracticeTargets()
+                if self.settings.bulletsAvailable == 0:
+                    self.stats.practiceActive = False
+                    self.settings.resetSettings()
             pygame.display.flip()
 
     
@@ -75,6 +89,8 @@ class alienInvasionSideways():
             self.stats.gameActive = False
             self.stats.practiceActive = False
             pygame.mouse.set_visible(True)
+        if event.key == pygame.K_h:
+            self.settings.bulletHeight = 200
 
     def _checkPlayButton(self,mousePos):
         """ start a new game when the player clicks Play """
@@ -82,11 +98,10 @@ class alienInvasionSideways():
         if buttonClicked and not self.stats.gameActive and not self.stats.practiceActive:
             self.stats.resetStats()
             self.stats.gameActive = True
-            self.aliens.empty()
-            self.bullets.empty()
-            # create a new fleet and center ship
             self._createFleet()
-            self.ship.centerShip()
+            self._resetToNormal()
+            self.sb.prepScore()
+            # create a new fleet and center ship
             pygame.mouse.set_visible(False)
 
     def _checkPracticeButton(self,mousePos):
@@ -97,16 +112,16 @@ class alienInvasionSideways():
             self.practiceTargets = pygame.sprite.Group()
             newPracticeTarget = TargetPractice(self)
             self.practiceTargets.add(newPracticeTarget)
-            self.aliens.empty()
-            self.bullets.empty()
-            # create a new fleet and center ship
-            #self._createFleet()
-            self.ship.centerShip()
+            self._resetToNormal()
             pygame.mouse.set_visible(False)
     def _createBullet(self):
-        if len(self.bullets) < self.settings.allowedBulletAmount:
+        if self.stats.practiceActive == True and self.settings.bulletsAvailable > 0 and len(self.bullets) < self.settings.allowedBulletAmount:
             newBullet = Bullet(self)
             self.bullets.add(newBullet)
+        elif len(self.bullets) < self.settings.allowedBulletAmount and self.stats.gameActive == True:
+            newBullet = Bullet(self)
+            self.bullets.add(newBullet)
+
     def _updateBullets(self):
         for bullet in self.bullets.sprites():
             bullet.blitme()
@@ -114,7 +129,15 @@ class alienInvasionSideways():
         for bullet in self.bullets.copy():
             if bullet.rect.x > self.settings.screenWidth:
                 self.bullets.remove(bullet)
+
+                self.settings.bulletsAvailable -= 1
+                print(self.settings.bulletsAvailable)
             collisions = pygame.sprite.groupcollide(self.bullets,self.aliens,True,True)
+            print(collisions)
+            if(collisions):
+                for collision in collisions.values():
+                    self.stats.score += self.settings.alienPoints * len(collision)
+                self.sb.prepScore()
         
     def _createFleet(self):
         alien = Alien(self)
@@ -178,15 +201,10 @@ class alienInvasionSideways():
         if self.stats.shipsLeft > 0:
             self.stats.shipsLeft -= 1
             print(self.stats.shipsLeft)
-
             #get rid of aliens and bullets
-            self.bullets.empty()
-            self.aliens.empty()
-
+            self._resetToNormal()
             #create new fleet
             self._createFleet()
-            self.ship.centerShip()
-
             sleep(0.5)
         else:
             self.stats.gameActive = False
@@ -195,19 +213,27 @@ class alienInvasionSideways():
     def _updatePracticeTargets(self):
         for practiceTarget in self.practiceTargets.sprites():
             practiceTarget.drawPracticeTarget()
+            lastY = practiceTarget.rect.y
         self.practiceTargets.update()
         collisions = pygame.sprite.groupcollide(self.bullets,self.practiceTargets,True,True)
         if(len(self.practiceTargets) == 0):
             # create new faster target I guess.
-            self._createNewPracticeTarget()
+            self._createNewPracticeTarget(lastY)
     
-    def _createNewPracticeTarget(self):
+    def _createNewPracticeTarget(self,lastY):
         #creates a new, harder practice target
-        self.settings.practiceTargetSpeed += 1
-        self.settings.practiceTargetHeight * 0.9
-        self.settings.practiceTargetWidth * 0.9
+        self.settings.makePracticeTargetHarder()
         newPracticeTarget = TargetPractice(self)
+        newPracticeTarget.y = lastY
+        #continue the new target where the last went off.
         self.practiceTargets.add(newPracticeTarget)
+        self.settings.bulletsAvailable = 3
+
+    def _resetToNormal(self):
+        # removes aliens, bullets and centers ship
+        self.aliens.empty()
+        self.bullets.empty()
+        self.ship.centerShip()
 if __name__ == '__main__':
     ai = alienInvasionSideways()
     ai.runGame()
