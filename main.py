@@ -21,15 +21,16 @@ class alienInvasionSideways():
         self.ship = SpaceShip(self)
         self.bullets = pygame.sprite.Group()
         self.aliens = pygame.sprite.Group()
-       # self._createFleet()
         self.bg = pygame.image.load("images/bg.bmp")
         self.playButton = Button(self,"Play",50,50)
         self.practiceButton = Button(self,"Practice",100,100)
+
 
     def runGame(self):
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    self.stats.writeHighscore()
                     sys.exit()
                 if event.type == pygame.KEYDOWN:
                     self.handleKeyDownEvents(event)
@@ -78,6 +79,7 @@ class alienInvasionSideways():
             self.ship.movingDown = False
     def handleKeyDownEvents(self,event):
         if event.key == pygame.K_q:
+            self.stats.writeHighscore()
             sys.exit()
         if event.key == pygame.K_UP:
             self.ship.movingUp = True
@@ -138,6 +140,7 @@ class alienInvasionSideways():
                 for collision in collisions.values():
                     self.stats.score += self.settings.alienPoints * len(collision)
                 self.sb.prepScore()
+                self.sb.checkHighScore()
         
     def _createFleet(self):
         alien = Alien(self)
@@ -205,6 +208,8 @@ class alienInvasionSideways():
             self._resetToNormal()
             #create new fleet
             self._createFleet()
+            self.stats.score = 0
+            self.sb.prepScore()
             sleep(0.5)
         else:
             self.stats.gameActive = False
@@ -237,3 +242,5 @@ class alienInvasionSideways():
 if __name__ == '__main__':
     ai = alienInvasionSideways()
     ai.runGame()
+
+
